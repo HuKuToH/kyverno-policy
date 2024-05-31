@@ -1,0 +1,41 @@
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: replace-image-registry
+spec:
+  background: false
+  rules:
+    - name: replace-image-registry-pod-containers
+      match:
+        any:
+        - resources:
+            kinds:
+            - Pod
+      mutate:
+        foreach:
+        - list: "request.object.spec.containers"
+          patchStrategicMerge:
+            spec:
+              containers:
+              - name: "{{ element.name }}"
+#                image: "{{images.containers.\"{{element.name}}\" }}"
+                image: "{{ replace_all('{{ images.containers.\"{{element.name}}\".registry }}', 'docker.io', 'mirror.gcr.io')}}/{{ images.containers.\"{{element.name}}\".path}}:{{images.containers.\"{{element.name}}\".tag}}"
+    - name: replace-image-registry-pod-initcontainers
+      match:
+        any:
+        - resources:
+            kinds:
+            - Pod
+      preconditions:
+        all:
+        - key: "{{ request.object.spec.initContainers[] || `[]` | length(@) }}"
+          operator: GreaterThanOrEquals
+          value: 1
+      mutate:
+        foreach:
+        - list: "request.object.spec.initContainers"
+          patchStrategicMerge:
+            spec:
+              initContainers:
+              - name: "{{ element.name }}"
+                image: "{{ replace_all('{{ images.initContainers.\"{{element.name}}\".registry }}', 'docker.io', 'mirror.gcr.io')}}/{{ images.initContainers.\"{{element.name}}\".path}}:{{images.initContainers.\"{{element.name}}\".tag}}"
