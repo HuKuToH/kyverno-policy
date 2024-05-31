@@ -18,7 +18,6 @@ spec:
             spec:
               containers:
               - name: "{{ element.name }}"
-#                image: "{{images.containers.\"{{element.name}}\" }}"
                 image: "{{ replace_all('{{ images.containers.\"{{element.name}}\".registry }}', 'docker.io', 'mirror.gcr.io')}}/{{ images.containers.\"{{element.name}}\".path}}:{{images.containers.\"{{element.name}}\".tag}}"
     - name: replace-image-registry-pod-initcontainers
       match:
